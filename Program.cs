@@ -1,34 +1,63 @@
 ﻿using PackCheckTool;
 using SharpCompress.Archives;
 using System.Collections.Concurrent;
+using System.Reflection;
+using System.Text;
+using SharpCompress.Common;
+using SharpCompress.Readers;
+
+Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
 var ofiles = new List<FileInfo>();
 var upass = "";
-var command = "addFile";
+var coding = Encoding.Default;
+var commandType = CommandType.AddFile;
 foreach (var item in args)
 {
-    if (item == "-f")
-        command = "addFiles";
-    else if (item == "-p")
-        command = "setPass";
-    switch (command)
+    switch (item)
     {
-        case "setPass":
-            upass = item;
+        case CommandType.AddFile:
+        case CommandType.SetPass:
+        case CommandType.SetCoding:
+            commandType = item;
+            continue;
+        default:
             break;
-        case "addFile":
+    }
+    switch (commandType)
+    {
+        case CommandType.SetPass:
+            upass = item;
+            commandType = CommandType.AddFile;
+            break;
+        case CommandType.AddFile:
             ofiles.Add(new FileInfo(item));
+            break;
+        case CommandType.SetCoding:
+            coding = Encoding.GetEncoding(item);
+            commandType = CommandType.AddFile;
             break;
         default:
             break;
     }
 }
+
 if (!ofiles.Any())
 {
-    Console.WriteLine("use command: -f xxx.zip aaa.zip -p pass");
+    Console.WriteLine(Assembly.GetExecutingAssembly().GetName());
+    Console.WriteLine($"Usage: PackCheckTool [option] <file> <file2>...");
+    Console.WriteLine("<Option>");
+    Console.WriteLine("  -p <pass> : set password");
+    Console.WriteLine("  -c <coding> : set coding");
+    Console.WriteLine("  -f <file> <file2>... : load files");
     return;
 }
-var pack = ArchiveFactory.Open(ofiles);
+
+var pack = ArchiveFactory.Open(ofiles, new ReaderOptions()
+{
+    Password = upass,
+    ArchiveEncoding = new ArchiveEncoding(coding, coding)
+});
 
 var files = new ConcurrentBag<TreeNodeRelationEntityBase<PackFileInfo>>();
 pack.Entries.AsParallel().ForAll(item =>
@@ -60,7 +89,10 @@ var pwdo = treeFiles;
 while (true)
 {
     Console.Write($"{pwd}>");
-    var commands = Console.ReadLine()?.Split(' ');
+    var tcommand = Console.ReadLine();
+    if (string.IsNullOrEmpty(tcommand) == null)
+        continue;
+    var commands = tcommand?.Split(' ');
     if (commands == null)
         continue;
     switch (commands.First().ToLower())
@@ -89,7 +121,7 @@ while (true)
             break;
 
         case "cd":
-            var v = string.Join("", commands.Skip(1));
+            var v = tcommand[(tcommand.IndexOf(' ') + 1)..];
             if (v == "..")
             {
                 var pwds = pwd.Split("/");
@@ -106,6 +138,7 @@ while (true)
                     Console.WriteLine();
                     break;
                 }
+
                 v = tp;
             }
             else
@@ -119,15 +152,17 @@ while (true)
                     break;
                 }
             }
+
             pwd = v;
             break;
 
         case "cat":
-            var v2 = string.Join("", commands.Skip(1));
+            var v2 = tcommand[(tcommand.IndexOf(' ') + 1)..];
             if (!string.IsNullOrEmpty(pwd))
                 v2 = pwd + "/" + v2;
             var rpathID2 = v2.GetHashCode().ToString();
-            var f = treeFiles.AllTreeList.AsParallel().FirstOrDefault(x => x.EntityData.ID == rpathID2 && !x.EntityData.OTag.IsDir);
+            var f = treeFiles.AllTreeList.AsParallel()
+                .FirstOrDefault(x => x.EntityData.ID == rpathID2 && !x.EntityData.OTag.IsDir);
             if (f == null)
             {
                 Console.WriteLine();
@@ -135,6 +170,7 @@ while (true)
                 Console.WriteLine();
                 break;
             }
+
             var vaa = f.EntityData.OTag;
 
             using (var fs = f.EntityData.OTag.OpenStream())
@@ -146,6 +182,7 @@ while (true)
                     Console.WriteLine();
                     break;
                 }
+
                 using (var t = new StreamReader(fs))
                 {
                     Console.WriteLine();
@@ -153,6 +190,7 @@ while (true)
                     Console.WriteLine();
                 }
             }
+
             break;
 
         case "cls":
