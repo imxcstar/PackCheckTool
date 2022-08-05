@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ConsoleApp14": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\B\\Desktop\\apiGen.zip.001 D:\\B\\Desktop\\apiGen.zip.002 D:\\B\\Desktop\\apiGen.zip.003 D:\\B\\Desktop\\apiGen.zip.004 D:\\B\\Desktop\\apiGen.zip.005"
+    }
+  }
+}
