@@ -24,6 +24,7 @@ foreach (var item in args)
         default:
             break;
     }
+
     switch (commandType)
     {
         case CommandType.SetPass:
@@ -90,7 +91,7 @@ while (true)
 {
     Console.Write($"{pwd}>");
     var tcommand = Console.ReadLine();
-    if (string.IsNullOrEmpty(tcommand) == null)
+    if (string.IsNullOrEmpty(tcommand))
         continue;
     var commands = tcommand?.Split(' ');
     if (commands == null)
@@ -99,6 +100,7 @@ while (true)
     {
         case "l":
         case "ls":
+        {
             Console.WriteLine();
 
             pwdo = treeFiles;
@@ -118,9 +120,11 @@ while (true)
             foreach (var item in ns)
                 Console.WriteLine($"\t{item.EntityData.OTag.LastModifiedTime,19}{(item.EntityData.OTag.IsDir ? "-" : item.EntityData.OTag.Size),18}\t{item.EntityData.Name}");
             Console.WriteLine();
+        }
             break;
 
         case "cd":
+        {
             var v = tcommand[(tcommand.IndexOf(' ') + 1)..];
             if (v == "..")
             {
@@ -154,19 +158,20 @@ while (true)
             }
 
             pwd = v;
+        }
             break;
 
         case "cat":
-            var v2 = tcommand[(tcommand.IndexOf(' ') + 1)..];
+        {
+            var v = tcommand[(tcommand.IndexOf(' ') + 1)..];
             if (!string.IsNullOrEmpty(pwd))
-                v2 = pwd + "/" + v2;
-            var rpathID2 = v2.GetHashCode().ToString();
-            var f = treeFiles.AllTreeList.AsParallel()
-                .FirstOrDefault(x => x.EntityData.ID == rpathID2 && !x.EntityData.OTag.IsDir);
+                v = pwd + "/" + v;
+            var rpathID2 = v.GetHashCode().ToString();
+            var f = treeFiles.AllTreeList.AsParallel().FirstOrDefault(x => x.EntityData.ID == rpathID2 && !x.EntityData.OTag.IsDir);
             if (f == null)
             {
                 Console.WriteLine();
-                Console.WriteLine($"\t\"{v2}\" file does not exist!");
+                Console.WriteLine($"\t\"{v}\" file does not exist!");
                 Console.WriteLine();
                 break;
             }
@@ -178,7 +183,7 @@ while (true)
                 if (fs == null)
                 {
                     Console.WriteLine();
-                    Console.WriteLine($"\t\"{v2}\" file open error!");
+                    Console.WriteLine($"\t\"{v}\" file open error!");
                     Console.WriteLine();
                     break;
                 }
@@ -190,7 +195,38 @@ while (true)
                     Console.WriteLine();
                 }
             }
+        }
 
+            break;
+        case "down":
+        {
+            var v = tcommand[(tcommand.IndexOf(' ') + 1)..];
+            if (!string.IsNullOrEmpty(pwd))
+                v = pwd + "/" + v;
+            var rpathID2 = v.GetHashCode().ToString();
+            var f = treeFiles.AllTreeList.AsParallel().FirstOrDefault(x => x.EntityData.ID == rpathID2);
+            if (f == null)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"\t\"{v}\" file does not exist!");
+                Console.WriteLine();
+                break;
+            }
+
+            Console.Write("out path:");
+            var outPath = Console.ReadLine();
+            if(!Directory.Exists(outPath))
+            {
+                Console.WriteLine();
+                Console.WriteLine($"\t\"{outPath}\" path does not exist!");
+                Console.WriteLine();
+                break;
+            }
+            
+            var vaa = f.EntityData.OTag;
+
+            vaa.ArchiveEntry.WriteToDirectory(outPath, new ExtractionOptions() { ExtractFullPath = true });
+        }
             break;
 
         case "cls":

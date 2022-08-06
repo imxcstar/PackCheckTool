@@ -1,8 +1,8 @@
 {
   "profiles": {
-    "ConsoleApp14": {
+    "PackCheckTool": {
       "commandName": "Project",
-      "commandLineArgs": ""
+      "commandLineArgs": "/home/xcssa/下载/OpenComputers-MC1.12.2-1.7.5.192.jar"
     }
   }
 }

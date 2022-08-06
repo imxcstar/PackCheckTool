@@ -22,16 +22,16 @@ namespace PackCheckTool
 
         public DateTime? LastModifiedTime { get; set; }
 
-        private IArchiveEntry _archiveEntry;
+        public readonly IArchiveEntry ArchiveEntry;
 
         public PackFileInfo(IArchiveEntry archiveEntry)
         {
-            _archiveEntry = archiveEntry;
+            ArchiveEntry = archiveEntry;
         }
 
         public Stream? OpenStream()
         {
-            return _archiveEntry.OpenEntryStream();
+            return ArchiveEntry.OpenEntryStream();
         }
     }
 }
